@@ -4,6 +4,8 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
+process.env.DATABASE_URL ??= 'file:./test.db';
+
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -21,6 +23,14 @@ describe('AppController (e2e)', () => {
       .get('/')
       .expect(200)
       .expect('Hello World!');
+  });
+
+  it('/health (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/health')
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .expect({ ok: true });
   });
 
   afterEach(async () => {
