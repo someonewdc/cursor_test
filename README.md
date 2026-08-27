@@ -63,6 +63,8 @@ $ pnpm run test:cov
 2. **Ревью:** новый чат с промптом ревьюера.
 3. **Merge:** человек, только при зелёном CI.
 
+Бэклог фич блога: [docs/blog-features.md](docs/blog-features.md).
+
 
 ## Deployment
 
