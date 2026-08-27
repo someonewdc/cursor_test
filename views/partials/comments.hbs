@@ -1,0 +1,23 @@
+{{#if error}}
+  <p class="error">{{error}}</p>
+{{/if}}
+{{#if comments.length}}
+  <ul class="comment-list">
+    {{#each comments}}
+      <li>
+        <p class="comment-body">{{body}}</p>
+        <button
+          type="button"
+          hx-delete="/comments/{{id}}"
+          hx-target="#comments"
+          hx-swap="innerHTML"
+          hx-confirm="Delete this comment?"
+        >
+          Delete
+        </button>
+      </li>
+    {{/each}}
+  </ul>
+{{else}}
+  <p>No comments yet</p>
+{{/if}}

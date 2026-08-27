@@ -148,7 +148,7 @@ export class PostsController {
   @Get('posts/:id')
   @Render('posts/show')
   async show(@Param('id', parsePostIdPipe) id: number) {
-    const post = await this.postsService.findOne(id);
+    const post = await this.postsService.findOneWithComments(id);
     if (!post) {
       throw new NotFoundException();
     }
@@ -160,6 +160,7 @@ export class PostsController {
         createdAt: formatPostDate(post.createdAt),
         createdAtIso: post.createdAt.toISOString(),
       },
+      comments: post.comments,
     };
   }
 }

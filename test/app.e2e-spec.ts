@@ -24,6 +24,7 @@ describe('App (e2e)', () => {
     await app.init();
 
     prisma = app.get(PrismaService);
+    await prisma.comment.deleteMany();
     await prisma.post.deleteMany();
     post = await prisma.post.create({
       data: {
@@ -34,6 +35,7 @@ describe('App (e2e)', () => {
   });
 
   afterEach(async () => {
+    await prisma.comment.deleteMany();
     await prisma.post.deleteMany();
     await app.close();
   });
@@ -145,6 +147,17 @@ describe('App (e2e)', () => {
           `datetime="${post.createdAt.toISOString()}"`,
         );
         expect(res.text).not.toMatch(/datetime="[A-Z][a-z]{2} /);
+        expect(res.text).toContain('id="comments"');
+        expect(res.text).toContain('No comments yet');
+        expect(res.text).toContain(`hx-post="/posts/${post.id}/comments"`);
+        expect(res.text).toContain('hx-target="#comments"');
+        expect(res.text).toContain('hx-swap="innerHTML"');
+        expect(res.text).toContain(
+          'hx-on::after-request="if(event.detail.successful) this.reset()"',
+        );
+        expect(res.text).toContain('name="body"');
+        expect(res.text).not.toContain(`action="/posts/${post.id}/comments"`);
+        expect(res.text).not.toMatch(/method="post"/i);
       });
   });
 
@@ -232,6 +245,13 @@ describe('App (e2e)', () => {
   });
 
   it('/posts/:id (DELETE) removes the post then a second DELETE returns 404', async () => {
+    await prisma.comment.create({
+      data: {
+        postId: post.id,
+        body: 'Cascade me',
+      },
+    });
+
     const res = await request(app.getHttpServer())
       .delete(`/posts/${post.id}`)
       .set('HX-Request', 'true')
@@ -242,6 +262,11 @@ describe('App (e2e)', () => {
     const gone = await prisma.post.findUnique({ where: { id: post.id } });
     expect(gone).toBeNull();
 
+    const comments = await prisma.comment.findMany({
+      where: { postId: post.id },
+    });
+    expect(comments).toEqual([]);
+
     await request(app.getHttpServer())
       .delete(`/posts/${post.id}`)
       .set('HX-Request', 'true')
@@ -251,6 +276,104 @@ describe('App (e2e)', () => {
         expect(second.text).toContain('<!DOCTYPE html>');
         expect(second.text).toContain('Not found');
         expect(second.body).toEqual({});
+      });
+  });
+
+  it('/posts/:id/comments (POST) then DELETE /comments/:id updates the show page', async () => {
+    const created = await request(app.getHttpServer())
+      .post(`/posts/${post.id}/comments`)
+      .set('HX-Request', 'true')
+      .type('form')
+      .send({ body: '  A thoughtful note  ' })
+      .expect('Content-Type', /html/)
+      .expect(201);
+
+    expect(created.text).toContain('A thoughtful note');
+    expect(created.text).not.toContain('No comments yet');
+    expect(created.text).not.toContain('<!DOCTYPE html>');
+    expect(created.text).toContain('hx-target="#comments"');
+    expect(created.text).toContain('hx-swap="innerHTML"');
+    expect(created.text).toContain('hx-confirm="Delete this comment?"');
+
+    const comment = await prisma.comment.findFirst({
+      where: { postId: post.id },
+    });
+    expect(comment).toEqual(
+      expect.objectContaining({
+        postId: post.id,
+        body: 'A thoughtful note',
+      }),
+    );
+    expect(comment).not.toBeNull();
+    const commentId = comment.id;
+    expect(created.text).toContain(`hx-delete="/comments/${commentId}"`);
+
+    await request(app.getHttpServer())
+      .get(`/posts/${post.id}`)
+      .expect('Content-Type', /html/)
+      .expect(200)
+      .expect((show) => {
+        expect(show.text).toContain('A thoughtful note');
+        expect(show.text).toContain(`hx-delete="/comments/${commentId}"`);
+      });
+
+    const deleted = await request(app.getHttpServer())
+      .delete(`/comments/${commentId}`)
+      .set('HX-Request', 'true')
+      .expect('Content-Type', /html/)
+      .expect(200);
+
+    expect(deleted.text).toContain('No comments yet');
+    expect(deleted.text).not.toContain('A thoughtful note');
+    expect(deleted.text).not.toContain('<!DOCTYPE html>');
+
+    await request(app.getHttpServer())
+      .get(`/posts/${post.id}`)
+      .expect('Content-Type', /html/)
+      .expect(200)
+      .expect((show) => {
+        expect(show.text).toContain('No comments yet');
+        expect(show.text).not.toContain('A thoughtful note');
+      });
+  });
+
+  it('/posts/:id/comments (POST) returns 400 when the body is empty', async () => {
+    return request(app.getHttpServer())
+      .post(`/posts/${post.id}/comments`)
+      .type('form')
+      .send({ body: '  ' })
+      .expect('Content-Type', /html/)
+      .expect(400)
+      .expect((res) => {
+        expect(res.text).toContain('Comment cannot be empty');
+        expect(res.text).toContain('No comments yet');
+      });
+  });
+
+  it('/posts/:id/comments (POST) returns 404 HTML for an unknown post', () => {
+    return request(app.getHttpServer())
+      .post('/posts/99999/comments')
+      .type('form')
+      .send({ body: 'Orphan comment' })
+      .expect('Content-Type', /html/)
+      .expect(404)
+      .expect((res) => {
+        expect(res.text).toContain('<!DOCTYPE html>');
+        expect(res.text).toContain('Not found');
+        expect(res.body).toEqual({});
+      });
+  });
+
+  it('/comments/:id (DELETE) returns 404 HTML for an unknown comment', () => {
+    return request(app.getHttpServer())
+      .delete('/comments/99999')
+      .set('HX-Request', 'true')
+      .expect('Content-Type', /html/)
+      .expect(404)
+      .expect((res) => {
+        expect(res.text).toContain('<!DOCTYPE html>');
+        expect(res.text).toContain('Not found');
+        expect(res.body).toEqual({});
       });
   });
 

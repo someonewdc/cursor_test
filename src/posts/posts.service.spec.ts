@@ -30,6 +30,7 @@ describe('PostsService', () => {
   });
 
   afterEach(async () => {
+    await prisma.comment.deleteMany();
     await prisma.post.deleteMany();
     await moduleRef.close();
   });
@@ -72,6 +73,44 @@ describe('PostsService', () => {
         body: 'World',
       }),
     );
+    expect(found).not.toHaveProperty('comments');
+  });
+
+  it('findOneWithComments includes comments ordered by createdAt ascending', async () => {
+    const created = await prisma.post.create({
+      data: {
+        title: 'Hello',
+        body: 'World',
+      },
+    });
+    const older = await prisma.comment.create({
+      data: {
+        postId: created.id,
+        body: 'Older',
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      },
+    });
+    const newer = await prisma.comment.create({
+      data: {
+        postId: created.id,
+        body: 'Newer',
+        createdAt: new Date('2025-01-01T00:00:00.000Z'),
+      },
+    });
+
+    const found = await postsService.findOneWithComments(created.id);
+
+    expect(found).toEqual(
+      expect.objectContaining({
+        id: created.id,
+        title: 'Hello',
+        body: 'World',
+      }),
+    );
+    expect(found?.comments.map((comment) => comment.id)).toEqual([
+      older.id,
+      newer.id,
+    ]);
   });
 
   it('findOne returns null when the post does not exist', async () => {
@@ -137,11 +176,17 @@ describe('PostsService', () => {
     expect(updated).toBeNull();
   });
 
-  it('remove deletes the post', async () => {
+  it('remove deletes the post and cascade-deletes its comments', async () => {
     const created = await prisma.post.create({
       data: {
         title: 'To delete',
         body: 'Gone soon',
+      },
+    });
+    const comment = await prisma.comment.create({
+      data: {
+        postId: created.id,
+        body: 'Also gone',
       },
     });
 
@@ -157,6 +202,11 @@ describe('PostsService', () => {
 
     const found = await prisma.post.findUnique({ where: { id: created.id } });
     expect(found).toBeNull();
+
+    const leftover = await prisma.comment.findUnique({
+      where: { id: comment.id },
+    });
+    expect(leftover).toBeNull();
   });
 
   it('remove returns null when the post does not exist', async () => {
