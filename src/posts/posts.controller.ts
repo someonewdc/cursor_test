@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Render,
   Req,
   Res,
@@ -70,6 +71,62 @@ export class PostsController {
     res.redirect(HttpStatus.SEE_OTHER, location);
   }
 
+  @Get('posts/:id/edit')
+  @Render('posts/edit')
+  async edit(@Param('id', parsePostIdPipe) id: number) {
+    const post = await this.postsService.findOne(id);
+    if (!post) {
+      throw new NotFoundException();
+    }
+    return {
+      post: {
+        id: post.id,
+        title: post.title,
+        body: post.body,
+      },
+    };
+  }
+
+  @Put('posts/:id')
+  async update(
+    @Param('id', parsePostIdPipe) id: number,
+    @Body('title') title: string | undefined,
+    @Body('body') body: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const existing = await this.postsService.findOne(id);
+    if (!existing) {
+      throw new NotFoundException();
+    }
+
+    const trimmedTitle = (title ?? '').trim();
+    const trimmedBody = (body ?? '').trim();
+
+    if (!trimmedTitle || !trimmedBody) {
+      res.status(HttpStatus.BAD_REQUEST).render('posts/edit', {
+        post: {
+          id,
+          title: title ?? '',
+          body: body ?? '',
+        },
+        error: 'Title and body are required',
+      });
+      return;
+    }
+
+    await this.postsService.update(id, {
+      title: trimmedTitle,
+      body: trimmedBody,
+    });
+    const location = `/posts/${id}`;
+    if (req.get('HX-Request') === 'true') {
+      res.status(HttpStatus.OK).set('HX-Redirect', location).end();
+      return;
+    }
+    res.redirect(HttpStatus.SEE_OTHER, location);
+  }
+
   @Get('posts/:id')
   @Render('posts/show')
   async show(@Param('id', parsePostIdPipe) id: number) {
@@ -79,6 +136,7 @@ export class PostsController {
     }
     return {
       post: {
+        id: post.id,
         title: post.title,
         body: post.body,
         createdAt: formatPostDate(post.createdAt),

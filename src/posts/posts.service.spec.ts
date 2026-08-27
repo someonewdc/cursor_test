@@ -96,4 +96,44 @@ describe('PostsService', () => {
       }),
     );
   });
+
+  it('update changes title and body', async () => {
+    const created = await prisma.post.create({
+      data: {
+        title: 'Before',
+        body: 'Old body',
+      },
+    });
+
+    const updated = await postsService.update(created.id, {
+      title: 'After',
+      body: 'New body',
+    });
+
+    expect(updated).toEqual(
+      expect.objectContaining({
+        id: created.id,
+        title: 'After',
+        body: 'New body',
+      }),
+    );
+
+    const found = await prisma.post.findUnique({ where: { id: created.id } });
+    expect(found).toEqual(
+      expect.objectContaining({
+        id: created.id,
+        title: 'After',
+        body: 'New body',
+      }),
+    );
+  });
+
+  it('update returns null when the post does not exist', async () => {
+    const updated = await postsService.update(99999, {
+      title: 'Nope',
+      body: 'Missing',
+    });
+
+    expect(updated).toBeNull();
+  });
 });
