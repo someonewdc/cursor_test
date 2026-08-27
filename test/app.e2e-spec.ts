@@ -177,8 +177,8 @@ describe('App (e2e)', () => {
       });
   });
 
-  it('/posts/:id (PUT) returns 400 when title or body is empty', () => {
-    return request(app.getHttpServer())
+  it('/posts/:id (PUT) returns 400 when title or body is empty', async () => {
+    await request(app.getHttpServer())
       .put(`/posts/${post.id}`)
       .type('form')
       .send({ title: '  ', body: 'Still here' })
@@ -186,7 +186,17 @@ describe('App (e2e)', () => {
       .expect(400)
       .expect((res) => {
         expect(res.text).toContain('Title and body are required');
+        expect(res.text).toContain('>Still here</textarea>');
       });
+
+    const unchanged = await prisma.post.findUnique({ where: { id: post.id } });
+    expect(unchanged).toEqual(
+      expect.objectContaining({
+        id: post.id,
+        title: 'My first post',
+        body: 'Hello from SQLite',
+      }),
+    );
   });
 
   it.each(['/posts/99999', '/posts/abc', '/posts/new', '/posts/99999/edit'])(
