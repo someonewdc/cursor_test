@@ -1,22 +1,36 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import request from 'supertest';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { configureApp } from './configure-app';
 
 describe('AppController', () => {
+  let app: NestExpressApplication;
   let appController: AppController;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
     }).compile();
 
-    appController = app.get<AppController>(AppController);
+    app = moduleFixture.createNestApplication<NestExpressApplication>();
+    configureApp(app);
+    await app.init();
+    appController = app.get(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  afterEach(async () => {
+    await app.close();
+  });
+
+  describe('GET /', () => {
+    it('should return HTML containing Blog and htmx', async () => {
+      const response = await request(app.getHttpServer()).get('/');
+
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toMatch(/html/);
+      expect(response.text).toContain('Blog');
+      expect(response.text).toMatch(/htmx/i);
     });
   });
 
