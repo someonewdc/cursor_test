@@ -138,6 +138,9 @@ describe('App (e2e)', () => {
         expect(res.text).toContain('Hello from SQLite');
         expect(res.text).toContain(`/posts/${post.id}/edit`);
         expect(res.text).toContain('Edit');
+        expect(res.text).toContain(`hx-delete="/posts/${post.id}"`);
+        expect(res.text).toContain('hx-confirm="Delete this post?"');
+        expect(res.text).toContain('Delete');
         expect(res.text).toContain(
           `datetime="${post.createdAt.toISOString()}"`,
         );
@@ -225,6 +228,29 @@ describe('App (e2e)', () => {
         expect(res.text).toContain('<!DOCTYPE html>');
         expect(res.text).toContain('Not found');
         expect(res.body).toEqual({});
+      });
+  });
+
+  it('/posts/:id (DELETE) removes the post then a second DELETE returns 404', async () => {
+    const res = await request(app.getHttpServer())
+      .delete(`/posts/${post.id}`)
+      .set('HX-Request', 'true')
+      .expect(200);
+
+    expect(res.headers['hx-redirect']).toBe('/');
+
+    const gone = await prisma.post.findUnique({ where: { id: post.id } });
+    expect(gone).toBeNull();
+
+    await request(app.getHttpServer())
+      .delete(`/posts/${post.id}`)
+      .set('HX-Request', 'true')
+      .expect('Content-Type', /html/)
+      .expect(404)
+      .expect((second) => {
+        expect(second.text).toContain('<!DOCTYPE html>');
+        expect(second.text).toContain('Not found');
+        expect(second.body).toEqual({});
       });
   });
 

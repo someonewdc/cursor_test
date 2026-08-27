@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   NotFoundException,
@@ -125,6 +126,23 @@ export class PostsController {
       return;
     }
     res.redirect(HttpStatus.SEE_OTHER, location);
+  }
+
+  @Delete('posts/:id')
+  async remove(
+    @Param('id', parsePostIdPipe) id: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const deleted = await this.postsService.remove(id);
+    if (!deleted) {
+      throw new NotFoundException();
+    }
+    if (req.get('HX-Request') === 'true') {
+      res.status(HttpStatus.OK).set('HX-Redirect', '/').end();
+      return;
+    }
+    res.redirect(HttpStatus.SEE_OTHER, '/');
   }
 
   @Get('posts/:id')
