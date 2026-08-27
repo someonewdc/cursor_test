@@ -60,6 +60,41 @@ describe('App (e2e)', () => {
       .expect(200)
       .expect((res) => {
         expect(res.text).toContain('No posts yet');
+        expect(res.text).toContain('hx-post="/posts"');
+      });
+  });
+
+  it('/posts (POST) creates a post and redirects with HX-Redirect', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/posts')
+      .type('form')
+      .send({ title: '  New post  ', body: '  New body  ' })
+      .expect(201);
+
+    expect(res.headers['hx-redirect']).toMatch(/^\/posts\/\d+$/);
+
+    const id = Number(res.headers['hx-redirect'].split('/').at(-1));
+    const created = await prisma.post.findUnique({ where: { id } });
+
+    expect(created).toEqual(
+      expect.objectContaining({
+        id,
+        title: 'New post',
+        body: 'New body',
+      }),
+    );
+  });
+
+  it('/posts (POST) returns 400 when title or body is empty', async () => {
+    return request(app.getHttpServer())
+      .post('/posts')
+      .type('form')
+      .send({ title: '   ', body: '' })
+      .expect('Content-Type', /html/)
+      .expect(400)
+      .expect((res) => {
+        expect(res.text).toContain('Title and body are required');
+        expect(res.text).toContain('hx-post="/posts"');
       });
   });
 

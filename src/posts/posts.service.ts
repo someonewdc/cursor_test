@@ -17,4 +17,8 @@ export class PostsService {
       where: { id },
     });
   }
+
+  create(data: { title: string; body: string }): Promise<Post> {
+    return this.prisma.post.create({ data });
+  }
 }

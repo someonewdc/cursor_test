@@ -45,6 +45,33 @@ article .body {
   white-space: pre-wrap;
 }
 
+.post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.post-form label {
+  display: block;
+  font-weight: 600;
+}
+
+.post-form input,
+.post-form textarea {
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+}
+
+.post-form textarea {
+  min-height: 8rem;
+}
+
+.error {
+  color: #b00020;
+}
+
 footer {
   margin-top: 3rem;
   color: #555;

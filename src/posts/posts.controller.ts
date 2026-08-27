@@ -1,11 +1,16 @@
 import {
+  Body,
   Controller,
   Get,
+  HttpStatus,
   NotFoundException,
   Param,
   ParseIntPipe,
+  Post,
   Render,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { PostsService } from './posts.service';
 
 const parsePostIdPipe = new ParseIntPipe({
@@ -29,6 +34,34 @@ export class PostsController {
   async index() {
     const posts = await this.postsService.findAll();
     return { posts };
+  }
+
+  @Post('posts')
+  async create(
+    @Body('title') title: string | undefined,
+    @Body('body') body: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    const trimmedTitle = (title ?? '').trim();
+    const trimmedBody = (body ?? '').trim();
+
+    if (!trimmedTitle || !trimmedBody) {
+      const posts = await this.postsService.findAll();
+      res.status(HttpStatus.BAD_REQUEST).render('posts/index', {
+        posts,
+        error: 'Title and body are required',
+      });
+      return;
+    }
+
+    const post = await this.postsService.create({
+      title: trimmedTitle,
+      body: trimmedBody,
+    });
+    res
+      .status(HttpStatus.CREATED)
+      .set('HX-Redirect', `/posts/${post.id}`)
+      .end();
   }
 
   @Get('posts/:id')

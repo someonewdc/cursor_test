@@ -19,6 +19,20 @@
       {{else}}
         <p>No posts yet</p>
       {{/if}}
+      {{#if error}}
+        <p class="error">{{error}}</p>
+      {{/if}}
+      <form class="post-form" hx-post="/posts">
+        <div>
+          <label for="title">Title</label>
+          <input id="title" name="title" type="text" />
+        </div>
+        <div>
+          <label for="body">Body</label>
+          <textarea id="body" name="body"></textarea>
+        </div>
+        <button type="submit">Create post</button>
+      </form>
     </main>
     {{> footer}}
   </body>
