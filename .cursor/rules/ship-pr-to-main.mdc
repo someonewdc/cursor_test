@@ -1,5 +1,5 @@
 ---
-description: Every development task must end with a PR targeting main. Never commit to main or merge.
+description: Sync latest main before work. Every task ends with a PR targeting main. Never commit to main or merge.
 alwaysApply: true
 ---
 
@@ -9,21 +9,22 @@ The Definition of Done for any implementation, fix, or feature is an open pull r
 
 ## Workflow
 
-1. Create or switch to a **new branch** from `main`. Never commit to `main`.
+1. **Before starting work**, fetch the latest `main` and create a **new branch from it**. Never start from a stale local branch. Never commit to `main`.
 2. Implement only the requested change. Add or update tests for the new behavior.
 3. **Verify locally before opening the PR.** CI on the PR is expected and does not replace this step.
    - Run the project's test and lint commands. Do not open a PR if they fail.
    - Walk through the diff: related files, shared state, and likely regressions. Confirm the change did not break existing behavior.
-4. Commit, push, and open a PR with `gh pr create` **targeting `main`**.
+4. Commit, push, and open a PR with `gh pr create` **targeting `main`**. Every new PR must go to `main`.
 5. PR body must include what changed, how to verify locally, and that CI will also run.
 6. Reply with the PR URL. Do not merge. Do not enable auto-merge. If CI fails, fix on the same branch and push.
 
 ```bash
-# ❌ BAD — commit or push to main
+# ❌ BAD — start from a stale local branch or commit to main
 git checkout main && git commit -am "feat: add endpoint"
 
-# ✅ GOOD — feature branch + PR into main
-git checkout -b feat/add-endpoint
+# ✅ GOOD — fetch latest main, then feature branch + PR into main
+git fetch origin main
+git checkout -b feat/add-endpoint origin/main
 git commit -am "feat: add user endpoint"
 git push -u origin HEAD
 gh pr create --base main --title "feat: add user endpoint" --body "$(cat <<'EOF'
