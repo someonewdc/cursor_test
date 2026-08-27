@@ -79,4 +79,21 @@ describe('PostsService', () => {
 
     expect(found).toBeNull();
   });
+
+  it('create persists a post', async () => {
+    const created = await postsService.create({
+      title: 'Created',
+      body: 'From the service',
+    });
+
+    const found = await prisma.post.findUnique({ where: { id: created.id } });
+
+    expect(found).toEqual(
+      expect.objectContaining({
+        id: created.id,
+        title: 'Created',
+        body: 'From the service',
+      }),
+    );
+  });
 });

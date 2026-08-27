@@ -46,6 +46,8 @@ describe('App (e2e)', () => {
       .expect((res) => {
         expect(res.text).toContain('Blog');
         expect(res.text).toMatch(/htmx/i);
+        expect(res.text).toContain('name="htmx-config"');
+        expect(res.text).toContain('"code":"400","swap":true');
         expect(res.text).toContain('My first post');
         expect(res.text).toContain(`/posts/${post.id}`);
       });
@@ -60,6 +62,69 @@ describe('App (e2e)', () => {
       .expect(200)
       .expect((res) => {
         expect(res.text).toContain('No posts yet');
+        expect(res.text).toContain('hx-post="/posts"');
+        expect(res.text).toContain('hx-target="body"');
+        expect(res.text).toContain('action="/posts"');
+        expect(res.text).toContain('method="post"');
+      });
+  });
+
+  it('/posts (POST) creates a post and redirects with HX-Redirect', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/posts')
+      .set('HX-Request', 'true')
+      .type('form')
+      .send({ title: '  New post  ', body: '  New body  ' })
+      .expect(201);
+
+    expect(res.headers['hx-redirect']).toMatch(/^\/posts\/\d+$/);
+
+    const id = Number(res.headers['hx-redirect'].split('/').at(-1));
+    const created = await prisma.post.findUnique({ where: { id } });
+
+    expect(created).toEqual(
+      expect.objectContaining({
+        id,
+        title: 'New post',
+        body: 'New body',
+      }),
+    );
+  });
+
+  it('/posts (POST) redirects to the new post without HTMX', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/posts')
+      .type('form')
+      .send({ title: 'Plain post', body: 'No HTMX' })
+      .expect(303);
+
+    expect(res.headers.location).toMatch(/^\/posts\/\d+$/);
+
+    const id = Number(res.headers.location.split('/').at(-1));
+    const created = await prisma.post.findUnique({ where: { id } });
+
+    expect(created).toEqual(
+      expect.objectContaining({
+        id,
+        title: 'Plain post',
+        body: 'No HTMX',
+      }),
+    );
+  });
+
+  it('/posts (POST) returns 400 when title or body is empty', async () => {
+    return request(app.getHttpServer())
+      .post('/posts')
+      .type('form')
+      .send({ title: 'Kept title', body: '  ' })
+      .expect('Content-Type', /html/)
+      .expect(400)
+      .expect((res) => {
+        expect(res.text).toContain('Title and body are required');
+        expect(res.text).toContain('My first post');
+        expect(res.text).toContain(`/posts/${post.id}`);
+        expect(res.text).toContain('value="Kept title"');
+        expect(res.text).toContain('hx-target="body"');
       });
   });
 
