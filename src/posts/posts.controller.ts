@@ -8,9 +8,10 @@ import {
   ParseIntPipe,
   Post,
   Render,
+  Req,
   Res,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { PostsService } from './posts.service';
 
 const parsePostIdPipe = new ParseIntPipe({
@@ -40,6 +41,7 @@ export class PostsController {
   async create(
     @Body('title') title: string | undefined,
     @Body('body') body: string | undefined,
+    @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
     const trimmedTitle = (title ?? '').trim();
@@ -50,6 +52,8 @@ export class PostsController {
       res.status(HttpStatus.BAD_REQUEST).render('posts/index', {
         posts,
         error: 'Title and body are required',
+        title: title ?? '',
+        body: body ?? '',
       });
       return;
     }
@@ -58,10 +62,12 @@ export class PostsController {
       title: trimmedTitle,
       body: trimmedBody,
     });
-    res
-      .status(HttpStatus.CREATED)
-      .set('HX-Redirect', `/posts/${post.id}`)
-      .end();
+    const location = `/posts/${post.id}`;
+    if (req.get('HX-Request') === 'true') {
+      res.status(HttpStatus.CREATED).set('HX-Redirect', location).end();
+      return;
+    }
+    res.redirect(HttpStatus.SEE_OTHER, location);
   }
 
   @Get('posts/:id')
