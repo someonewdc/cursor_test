@@ -37,4 +37,4 @@ If CI fails, fix on the same branch and push.
 
 ## Review
 
-Review is done by a human or a separate Agent chat, not Bugbot.
+Review is a separate Agent chat (or an explicit “проведи ревью” / “review this PR”). Do not review in the same chat that implemented the change. Use the `code-review` skill. Do not use Bugbot.
