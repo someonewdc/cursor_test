@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {{> head}}
+  </head>
+  <body>
+    <header>
+      <p><a href="/">Blog</a></p>
+    </header>
+    <main>
+      <h1>Edit post</h1>
+      {{#if error}}
+        <p class="error">{{error}}</p>
+      {{/if}}
+      <form
+        class="post-form"
+        hx-put="/posts/{{post.id}}"
+        hx-target="body"
+      >
+        <div>
+          <label for="title">Title</label>
+          <input id="title" name="title" type="text" value="{{post.title}}" />
+        </div>
+        <div>
+          <label for="body">Body</label>
+          <textarea id="body" name="body">{{post.body}}</textarea>
+        </div>
+        <button type="submit">Save</button>
+      </form>
+    </main>
+    {{> footer}}
+  </body>
+</html>

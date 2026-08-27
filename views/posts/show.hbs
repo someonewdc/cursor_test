@@ -12,6 +12,7 @@
         <h1>{{post.title}}</h1>
         <time datetime="{{post.createdAtIso}}">{{post.createdAt}}</time>
         <div class="body">{{post.body}}</div>
+        <p><a href="/posts/{{post.id}}/edit">Edit</a></p>
       </article>
     </main>
     {{> footer}}

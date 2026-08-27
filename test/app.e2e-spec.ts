@@ -136,6 +136,8 @@ describe('App (e2e)', () => {
       .expect((res) => {
         expect(res.text).toContain('My first post');
         expect(res.text).toContain('Hello from SQLite');
+        expect(res.text).toContain(`/posts/${post.id}/edit`);
+        expect(res.text).toContain('Edit');
         expect(res.text).toContain(
           `datetime="${post.createdAt.toISOString()}"`,
         );
@@ -143,7 +145,61 @@ describe('App (e2e)', () => {
       });
   });
 
-  it.each(['/posts/99999', '/posts/abc', '/posts/new'])(
+  it('/posts/:id/edit (GET) renders the edit form', () => {
+    return request(app.getHttpServer())
+      .get(`/posts/${post.id}/edit`)
+      .expect('Content-Type', /html/)
+      .expect(200)
+      .expect((res) => {
+        expect(res.text).toContain(`hx-put="/posts/${post.id}"`);
+        expect(res.text).toContain('value="My first post"');
+        expect(res.text).toContain('Hello from SQLite');
+      });
+  });
+
+  it('/posts/:id (PUT) updates a post then show contains the new title', async () => {
+    const res = await request(app.getHttpServer())
+      .put(`/posts/${post.id}`)
+      .set('HX-Request', 'true')
+      .type('form')
+      .send({ title: 'Updated title', body: 'Updated body' })
+      .expect(200);
+
+    expect(res.headers['hx-redirect']).toBe(`/posts/${post.id}`);
+
+    await request(app.getHttpServer())
+      .get(`/posts/${post.id}`)
+      .expect('Content-Type', /html/)
+      .expect(200)
+      .expect((show) => {
+        expect(show.text).toContain('Updated title');
+        expect(show.text).toContain('Updated body');
+      });
+  });
+
+  it('/posts/:id (PUT) returns 400 when title or body is empty', async () => {
+    await request(app.getHttpServer())
+      .put(`/posts/${post.id}`)
+      .type('form')
+      .send({ title: '  ', body: 'Still here' })
+      .expect('Content-Type', /html/)
+      .expect(400)
+      .expect((res) => {
+        expect(res.text).toContain('Title and body are required');
+        expect(res.text).toContain('>Still here</textarea>');
+      });
+
+    const unchanged = await prisma.post.findUnique({ where: { id: post.id } });
+    expect(unchanged).toEqual(
+      expect.objectContaining({
+        id: post.id,
+        title: 'My first post',
+        body: 'Hello from SQLite',
+      }),
+    );
+  });
+
+  it.each(['/posts/99999', '/posts/abc', '/posts/new', '/posts/99999/edit'])(
     '%s (GET) returns 404 HTML',
     (path) => {
       return request(app.getHttpServer())
@@ -157,6 +213,20 @@ describe('App (e2e)', () => {
         });
     },
   );
+
+  it('/posts/:id (PUT) returns 404 HTML for an unknown id', () => {
+    return request(app.getHttpServer())
+      .put('/posts/99999')
+      .type('form')
+      .send({ title: 'Missing', body: 'Post' })
+      .expect('Content-Type', /html/)
+      .expect(404)
+      .expect((res) => {
+        expect(res.text).toContain('<!DOCTYPE html>');
+        expect(res.text).toContain('Not found');
+        expect(res.body).toEqual({});
+      });
+  });
 
   it('/health (GET)', () => {
     return request(app.getHttpServer())
