@@ -10,7 +10,7 @@ describe('PrismaService', () => {
   let prisma: PrismaService;
 
   beforeAll(() => {
-    execSync('prisma migrate deploy', {
+    execSync('pnpm exec prisma migrate deploy', {
       stdio: 'inherit',
       env: process.env,
     });
