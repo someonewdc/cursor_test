@@ -35,4 +35,14 @@ export class PostsService {
       data,
     });
   }
+
+  async remove(id: number): Promise<Post | null> {
+    const existing = await this.findOne(id);
+    if (!existing) {
+      return null;
+    }
+    return this.prisma.post.delete({
+      where: { id },
+    });
+  }
 }

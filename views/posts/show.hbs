@@ -12,7 +12,16 @@
         <h1>{{post.title}}</h1>
         <time datetime="{{post.createdAtIso}}">{{post.createdAt}}</time>
         <div class="body">{{post.body}}</div>
-        <p><a href="/posts/{{post.id}}/edit">Edit</a></p>
+        <p class="post-actions">
+          <a href="/posts/{{post.id}}/edit">Edit</a>
+          <button
+            type="button"
+            hx-delete="/posts/{{post.id}}"
+            hx-confirm="Delete this post?"
+          >
+            Delete
+          </button>
+        </p>
       </article>
     </main>
     {{> footer}}

@@ -136,4 +136,32 @@ describe('PostsService', () => {
 
     expect(updated).toBeNull();
   });
+
+  it('remove deletes the post', async () => {
+    const created = await prisma.post.create({
+      data: {
+        title: 'To delete',
+        body: 'Gone soon',
+      },
+    });
+
+    const removed = await postsService.remove(created.id);
+
+    expect(removed).toEqual(
+      expect.objectContaining({
+        id: created.id,
+        title: 'To delete',
+        body: 'Gone soon',
+      }),
+    );
+
+    const found = await prisma.post.findUnique({ where: { id: created.id } });
+    expect(found).toBeNull();
+  });
+
+  it('remove returns null when the post does not exist', async () => {
+    const removed = await postsService.remove(99999);
+
+    expect(removed).toBeNull();
+  });
 });
