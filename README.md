@@ -57,6 +57,13 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+## Как сдавать работу
+
+1. **Фича:** Plan → Agent + `/ship-pr` (или просто «сделай и открой PR»).
+2. **Ревью:** новый чат с промптом ревьюера.
+3. **Merge:** человек, только при зелёном CI.
+
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
