@@ -1,14 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { Post } from '@prisma/client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { configureApp } from './../src/configure-app';
+import { PrismaService } from './../src/prisma/prisma.service';
 
 process.env.DATABASE_URL ??= 'file:./test.db';
 
-describe('AppController (e2e)', () => {
+describe('App (e2e)', () => {
   let app: NestExpressApplication<App>;
+  let prisma: PrismaService;
+  let post: Post;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -18,9 +22,23 @@ describe('AppController (e2e)', () => {
     app = moduleFixture.createNestApplication<NestExpressApplication<App>>();
     configureApp(app);
     await app.init();
+
+    prisma = app.get(PrismaService);
+    await prisma.post.deleteMany();
+    post = await prisma.post.create({
+      data: {
+        title: 'My first post',
+        body: 'Hello from SQLite',
+      },
+    });
   });
 
-  it('/ (GET)', () => {
+  afterEach(async () => {
+    await prisma.post.deleteMany();
+    await app.close();
+  });
+
+  it('/ (GET) contains the post title', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect('Content-Type', /html/)
@@ -28,8 +46,52 @@ describe('AppController (e2e)', () => {
       .expect((res) => {
         expect(res.text).toContain('Blog');
         expect(res.text).toMatch(/htmx/i);
+        expect(res.text).toContain('My first post');
+        expect(res.text).toContain(`/posts/${post.id}`);
       });
   });
+
+  it('/ (GET) shows empty state when there are no posts', async () => {
+    await prisma.post.deleteMany();
+
+    return request(app.getHttpServer())
+      .get('/')
+      .expect('Content-Type', /html/)
+      .expect(200)
+      .expect((res) => {
+        expect(res.text).toContain('No posts yet');
+      });
+  });
+
+  it('/posts/:id (GET) contains the post body', () => {
+    return request(app.getHttpServer())
+      .get(`/posts/${post.id}`)
+      .expect('Content-Type', /html/)
+      .expect(200)
+      .expect((res) => {
+        expect(res.text).toContain('My first post');
+        expect(res.text).toContain('Hello from SQLite');
+        expect(res.text).toContain(
+          `datetime="${post.createdAt.toISOString()}"`,
+        );
+        expect(res.text).not.toMatch(/datetime="[A-Z][a-z]{2} /);
+      });
+  });
+
+  it.each(['/posts/99999', '/posts/abc', '/posts/new'])(
+    '%s (GET) returns 404 HTML',
+    (path) => {
+      return request(app.getHttpServer())
+        .get(path)
+        .expect('Content-Type', /html/)
+        .expect(404)
+        .expect((res) => {
+          expect(res.text).toContain('<!DOCTYPE html>');
+          expect(res.text).toContain('Not found');
+          expect(res.body).toEqual({});
+        });
+    },
+  );
 
   it('/health (GET)', () => {
     return request(app.getHttpServer())
@@ -37,9 +99,5 @@ describe('AppController (e2e)', () => {
       .expect('Content-Type', /json/)
       .expect(200)
       .expect({ ok: true });
-  });
-
-  afterEach(async () => {
-    await app.close();
   });
 });

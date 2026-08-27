@@ -21,17 +21,6 @@ describe('AppController', () => {
     await app.close();
   });
 
-  describe('GET /', () => {
-    it('should return HTML containing Blog and htmx', async () => {
-      const response = await request(app.getHttpServer()).get('/');
-
-      expect(response.status).toBe(200);
-      expect(response.headers['content-type']).toMatch(/html/);
-      expect(response.text).toContain('Blog');
-      expect(response.text).toMatch(/htmx/i);
-    });
-  });
-
   describe('GET /health', () => {
     it('should return JSON { ok: true }', async () => {
       const response = await request(app.getHttpServer()).get('/health');

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {{> head}}
+  </head>
+  <body>
+    <header>
+      <p><a href="/">Blog</a></p>
+    </header>
+    <main>
+      <article>
+        <h1>{{post.title}}</h1>
+        <time datetime="{{post.createdAtIso}}">{{post.createdAt}}</time>
+        <div class="body">{{post.body}}</div>
+      </article>
+    </main>
+    {{> footer}}
+  </body>
+</html>
