@@ -6,7 +6,6 @@ import { configureApp } from './configure-app';
 
 describe('AppController', () => {
   let app: NestExpressApplication;
-  let appController: AppController;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -16,7 +15,6 @@ describe('AppController', () => {
     app = moduleFixture.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.init();
-    appController = app.get(AppController);
   });
 
   afterEach(async () => {
@@ -35,8 +33,12 @@ describe('AppController', () => {
   });
 
   describe('GET /health', () => {
-    it('should return { ok: true }', () => {
-      expect(appController.getHealth()).toEqual({ ok: true });
+    it('should return JSON { ok: true }', async () => {
+      const response = await request(app.getHttpServer()).get('/health');
+
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toMatch(/json/);
+      expect(response.body).toEqual({ ok: true });
     });
   });
 });
