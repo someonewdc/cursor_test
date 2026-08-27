@@ -30,6 +30,7 @@ describe('PostsService', () => {
   });
 
   afterEach(async () => {
+    await prisma.comment.deleteMany();
     await prisma.post.deleteMany();
     await moduleRef.close();
   });
@@ -70,6 +71,7 @@ describe('PostsService', () => {
         id: created.id,
         title: 'Hello',
         body: 'World',
+        comments: [],
       }),
     );
   });
@@ -137,11 +139,17 @@ describe('PostsService', () => {
     expect(updated).toBeNull();
   });
 
-  it('remove deletes the post', async () => {
+  it('remove deletes the post and cascade-deletes its comments', async () => {
     const created = await prisma.post.create({
       data: {
         title: 'To delete',
         body: 'Gone soon',
+      },
+    });
+    const comment = await prisma.comment.create({
+      data: {
+        postId: created.id,
+        body: 'Also gone',
       },
     });
 
@@ -157,6 +165,11 @@ describe('PostsService', () => {
 
     const found = await prisma.post.findUnique({ where: { id: created.id } });
     expect(found).toBeNull();
+
+    const leftover = await prisma.comment.findUnique({
+      where: { id: comment.id },
+    });
+    expect(leftover).toBeNull();
   });
 
   it('remove returns null when the post does not exist', async () => {

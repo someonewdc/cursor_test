@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Post } from '@prisma/client';
+import { Comment, Post } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+export type PostWithComments = Post & { comments: Comment[] };
 
 @Injectable()
 export class PostsService {
@@ -12,9 +14,12 @@ export class PostsService {
     });
   }
 
-  findOne(id: number): Promise<Post | null> {
+  findOne(id: number): Promise<PostWithComments | null> {
     return this.prisma.post.findUnique({
       where: { id },
+      include: {
+        comments: { orderBy: { createdAt: 'asc' } },
+      },
     });
   }
 

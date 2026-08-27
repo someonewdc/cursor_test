@@ -160,6 +160,7 @@ export class PostsController {
         createdAt: formatPostDate(post.createdAt),
         createdAtIso: post.createdAt.toISOString(),
       },
+      comments: post.comments,
     };
   }
 }

@@ -23,6 +23,26 @@
           </button>
         </p>
       </article>
+      <section class="comments-section">
+        <h2>Comments</h2>
+        <div id="comments">
+          {{> comments}}
+        </div>
+        <form
+          class="comment-form"
+          action="/posts/{{post.id}}/comments"
+          method="post"
+          hx-post="/posts/{{post.id}}/comments"
+          hx-target="#comments"
+          hx-swap="innerHTML"
+        >
+          <div>
+            <label for="comment-body">Comment</label>
+            <textarea id="comment-body" name="body"></textarea>
+          </div>
+          <button type="submit">Add comment</button>
+        </form>
+      </section>
     </main>
     {{> footer}}
   </body>
