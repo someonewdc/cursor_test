@@ -1,14 +1,24 @@
 import {
   Controller,
   Get,
-  HttpStatus,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Render,
-  Res,
 } from '@nestjs/common';
-import type { Response } from 'express';
 import { PostsService } from './posts.service';
+
+const parsePostIdPipe = new ParseIntPipe({
+  exceptionFactory: () => new NotFoundException(),
+});
+
+export function formatPostDate(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  }).format(date);
+}
 
 @Controller()
 export class PostsController {
@@ -22,15 +32,19 @@ export class PostsController {
   }
 
   @Get('posts/:id')
-  async show(
-    @Param('id', ParseIntPipe) id: number,
-    @Res() res: Response,
-  ): Promise<void> {
+  @Render('posts/show')
+  async show(@Param('id', parsePostIdPipe) id: number) {
     const post = await this.postsService.findOne(id);
     if (!post) {
-      res.status(HttpStatus.NOT_FOUND).render('not-found');
-      return;
+      throw new NotFoundException();
     }
-    res.render('posts/show', { post });
+    return {
+      post: {
+        title: post.title,
+        body: post.body,
+        createdAt: formatPostDate(post.createdAt),
+        createdAtIso: post.createdAt.toISOString(),
+      },
+    };
   }
 }

@@ -71,19 +71,27 @@ describe('App (e2e)', () => {
       .expect((res) => {
         expect(res.text).toContain('My first post');
         expect(res.text).toContain('Hello from SQLite');
+        expect(res.text).toContain(
+          `datetime="${post.createdAt.toISOString()}"`,
+        );
+        expect(res.text).not.toMatch(/datetime="[A-Z][a-z]{2} /);
       });
   });
 
-  it('/posts/99999 (GET) returns 404 HTML', () => {
-    return request(app.getHttpServer())
-      .get('/posts/99999')
-      .expect('Content-Type', /html/)
-      .expect(404)
-      .expect((res) => {
-        expect(res.text).toContain('<!DOCTYPE html>');
-        expect(res.body).toEqual({});
-      });
-  });
+  it.each(['/posts/99999', '/posts/abc', '/posts/new'])(
+    '%s (GET) returns 404 HTML',
+    (path) => {
+      return request(app.getHttpServer())
+        .get(path)
+        .expect('Content-Type', /html/)
+        .expect(404)
+        .expect((res) => {
+          expect(res.text).toContain('<!DOCTYPE html>');
+          expect(res.text).toContain('Not found');
+          expect(res.body).toEqual({});
+        });
+    },
+  );
 
   it('/health (GET)', () => {
     return request(app.getHttpServer())
