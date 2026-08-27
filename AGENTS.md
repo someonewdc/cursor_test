@@ -10,12 +10,20 @@ pnpm lint
 
 ## Git
 
-Never commit to `main`. Always work on a separate branch.
+Before starting any work, fetch the latest `main` and branch from it:
+
+```bash
+git fetch origin main
+git checkout -b feat/your-change origin/main
+```
+
+Never commit to `main`. Always work on a separate branch created from up-to-date `main`.
+Open every new PR against `main`.
 
 ## Definition of Done
 
 - Local tests are green.
-- PR is opened with `gh pr create`.
+- PR is opened with `gh pr create` against `main`.
 - PR description includes what changed and how to verify.
 - Do not merge.
 
