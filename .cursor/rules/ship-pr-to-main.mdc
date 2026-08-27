@@ -1,0 +1,46 @@
+---
+description: Every development task must end with a PR targeting main. Never commit to main or merge.
+alwaysApply: true
+---
+
+# Ship every task as a PR to main
+
+The Definition of Done for any implementation, fix, or feature is an open pull request against `main`. Do not consider the task complete until that PR exists.
+
+## Workflow
+
+1. Create or switch to a **new branch** from `main`. Never commit to `main`.
+2. Implement only the requested change. Add or update tests for the new behavior.
+3. **Verify locally before opening the PR.** CI on the PR is expected and does not replace this step.
+   - Run the project's test and lint commands. Do not open a PR if they fail.
+   - Walk through the diff: related files, shared state, and likely regressions. Confirm the change did not break existing behavior.
+4. Commit, push, and open a PR with `gh pr create` **targeting `main`**.
+5. PR body must include what changed, how to verify locally, and that CI will also run.
+6. Reply with the PR URL. Do not merge. Do not enable auto-merge. If CI fails, fix on the same branch and push.
+
+```bash
+# ❌ BAD — commit or push to main
+git checkout main && git commit -am "feat: add endpoint"
+
+# ✅ GOOD — feature branch + PR into main
+git checkout -b feat/add-endpoint
+git commit -am "feat: add user endpoint"
+git push -u origin HEAD
+gh pr create --base main --title "feat: add user endpoint" --body "$(cat <<'EOF'
+## Summary
+- Adds GET /users/:id
+
+## Test plan
+- [ ] Walk through the local diff; confirm related routes/callers still work
+- [ ] pnpm test
+- [ ] pnpm lint
+- [ ] CI pipeline on this PR is green
+EOF
+)"
+```
+
+CI is a second check, not a substitute. Green CI does not skip the local walkthrough.
+
+## Exceptions
+
+Do **not** open a PR for questions, read-only exploration, or when the user explicitly asks not to ship.
