@@ -152,7 +152,12 @@ describe('App (e2e)', () => {
         expect(res.text).toContain(`hx-post="/posts/${post.id}/comments"`);
         expect(res.text).toContain('hx-target="#comments"');
         expect(res.text).toContain('hx-swap="innerHTML"');
+        expect(res.text).toContain(
+          'hx-on::after-request="if(event.detail.successful) this.reset()"',
+        );
         expect(res.text).toContain('name="body"');
+        expect(res.text).not.toContain(`action="/posts/${post.id}/comments"`);
+        expect(res.text).not.toMatch(/method="post"/i);
       });
   });
 

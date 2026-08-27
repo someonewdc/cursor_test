@@ -71,9 +71,46 @@ describe('PostsService', () => {
         id: created.id,
         title: 'Hello',
         body: 'World',
-        comments: [],
       }),
     );
+    expect(found).not.toHaveProperty('comments');
+  });
+
+  it('findOneWithComments includes comments ordered by createdAt ascending', async () => {
+    const created = await prisma.post.create({
+      data: {
+        title: 'Hello',
+        body: 'World',
+      },
+    });
+    const older = await prisma.comment.create({
+      data: {
+        postId: created.id,
+        body: 'Older',
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      },
+    });
+    const newer = await prisma.comment.create({
+      data: {
+        postId: created.id,
+        body: 'Newer',
+        createdAt: new Date('2025-01-01T00:00:00.000Z'),
+      },
+    });
+
+    const found = await postsService.findOneWithComments(created.id);
+
+    expect(found).toEqual(
+      expect.objectContaining({
+        id: created.id,
+        title: 'Hello',
+        body: 'World',
+      }),
+    );
+    expect(found?.comments.map((comment) => comment.id)).toEqual([
+      older.id,
+      newer.id,
+    ]);
   });
 
   it('findOne returns null when the post does not exist', async () => {

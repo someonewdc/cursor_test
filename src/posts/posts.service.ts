@@ -14,7 +14,13 @@ export class PostsService {
     });
   }
 
-  findOne(id: number): Promise<PostWithComments | null> {
+  findOne(id: number): Promise<Post | null> {
+    return this.prisma.post.findUnique({
+      where: { id },
+    });
+  }
+
+  findOneWithComments(id: number): Promise<PostWithComments | null> {
     return this.prisma.post.findUnique({
       where: { id },
       include: {

@@ -30,11 +30,10 @@
         </div>
         <form
           class="comment-form"
-          action="/posts/{{post.id}}/comments"
-          method="post"
           hx-post="/posts/{{post.id}}/comments"
           hx-target="#comments"
           hx-swap="innerHTML"
+          hx-on::after-request="if(event.detail.successful) this.reset()"
         >
           <div>
             <label for="comment-body">Comment</label>
