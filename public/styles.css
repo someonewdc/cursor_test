@@ -20,6 +20,31 @@ h1 {
   font-weight: 600;
 }
 
+a {
+  color: #0b57d0;
+}
+
+.post-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.post-list li {
+  margin-bottom: 0.75rem;
+}
+
+article time {
+  display: block;
+  color: #555;
+  font-size: 0.875rem;
+}
+
+article .body {
+  margin-top: 1rem;
+  white-space: pre-wrap;
+}
+
 footer {
   margin-top: 3rem;
   color: #555;

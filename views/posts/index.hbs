@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {{> head}}
+  </head>
+  <body>
+    <header>
+      <h1>Blog</h1>
+    </header>
+    <main>
+      {{#if posts.length}}
+        <ul class="post-list">
+          {{#each posts}}
+            <li>
+              <a href="/posts/{{id}}">{{title}}</a>
+            </li>
+          {{/each}}
+        </ul>
+      {{else}}
+        <p>No posts yet</p>
+      {{/if}}
+    </main>
+    {{> footer}}
+  </body>
+</html>
