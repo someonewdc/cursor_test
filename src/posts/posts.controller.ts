@@ -7,7 +7,7 @@ import {
   Render,
   Res,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { PostsService } from './posts.service';
 
 @Controller()
